@@ -1,0 +1,15 @@
+version: "2"
+
+services:
+  awsl-py:
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile
+    image: registry.cn-beijing.aliyuncs.com/dreamhunter/awsl:python
+    container_name: awsl-py
+    environment:
+      ENV_FILE: .env
+    ports:
+        - "8000:8000"
+    volumes:
+      - ./db:/app/db
