@@ -33,7 +33,12 @@ class WbAwsl(object):
         max_id = self.select_max_id()
         _logger.info("awsl run: max_id=%s" % max_id)
         sql_tools = SqlTools(self.dbpath)
-        for wbdata in self.get_wbdata(max_id):
+        wbdatas = []
+        try:
+            wbdatas = self.get_wbdata(max_id)
+        except Exception as e:
+            _logger.exception(e)
+        for wbdata in wbdatas:
             try:
                 self.update_db(sql_tools, wbdata)
             except Exception as e:
