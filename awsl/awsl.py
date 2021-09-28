@@ -1,8 +1,7 @@
-import awsl
 import json
 import time
 import logging
-from typing import Any, List
+from typing import Any
 import requests
 import threading
 
@@ -33,16 +32,14 @@ class WbAwsl(object):
         max_id = self.select_max_id()
         _logger.info("awsl run: max_id=%s" % max_id)
         sql_tools = SqlTools(self.dbpath)
-        wbdatas = []
         try:
-            wbdatas = self.get_wbdata(max_id)
+            for wbdata in self.get_wbdata(max_id):
+                try:
+                    self.update_db(sql_tools, wbdata)
+                except Exception as e:
+                    _logger.exception(e)
         except Exception as e:
             _logger.exception(e)
-        for wbdata in wbdatas:
-            try:
-                self.update_db(sql_tools, wbdata)
-            except Exception as e:
-                _logger.exception(e)
         sql_tools.close()
         threading.Timer(self.ttl_time, self.run).start()
 
@@ -69,15 +66,17 @@ class WbAwsl(object):
     def wb_get(self, url) -> Any:
         try:
             res = requests.get(url=url, headers=self.headers)
-            if res.headers.get("Content-Type") == "text/html":
-                t = threading.Thread(target=self.new_cookie_sub)
-                t.start()
-                t.join()
-                return self.wb_get(url)
-            return res.json()
         except Exception as e:
             _logger.exception(e)
             return None
+        try:
+            return res.json()
+        except Exception as e:
+            _logger.exception(e)
+            t = threading.Thread(target=self.new_cookie_sub)
+            t.start()
+            t.join()
+            return self.wb_get(url)
 
     def get_wbdata(self, max_id: int) -> dict:
         for page in range(1, self.max_page):
