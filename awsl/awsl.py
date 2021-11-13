@@ -7,7 +7,6 @@ import threading
 
 from .config import settings
 from .tools import SqlTools
-from .wb import new_cookie_sub
 
 
 _logger = logging.getLogger(__name__)
@@ -48,10 +47,8 @@ class WbAwsl(object):
 
     @property
     def headers(self) -> dict:
-        if not self.cookie_sub:
-            return {}
         return {
-            "cookie": WB_COOKIE.format(self.cookie_sub)
+            "cookie": WB_COOKIE.format(settings.cookie_sub)
         }
 
     def select_max_id(self) -> int:
@@ -60,23 +57,13 @@ class WbAwsl(object):
         )
         return res[0] if res and res[0] else 0
 
-    def new_cookie_sub(self):
-        self.cookie_sub = new_cookie_sub()
-
     def wb_get(self, url) -> Any:
         try:
             res = requests.get(url=url, headers=self.headers)
-        except Exception as e:
-            _logger.exception(e)
-            return None
-        try:
             return res.json()
         except Exception as e:
             _logger.exception(e)
-            t = threading.Thread(target=self.new_cookie_sub)
-            t.start()
-            t.join()
-            return self.wb_get(url)
+            return None
 
     def get_wbdata(self, max_id: int) -> dict:
         for page in range(1, self.max_page):

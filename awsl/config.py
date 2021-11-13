@@ -5,7 +5,7 @@ from pydantic import BaseSettings
 
 class Settings(BaseSettings):
     uid: str
-    cookie_alc: str
+    cookie_sub: str
     keyword: str
     max_page: int
     dbpath: str
