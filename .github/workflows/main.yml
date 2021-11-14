@@ -13,9 +13,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Install and Build
-      run: yarn && yarn build
     - name: Docker Login
       uses: docker/login-action@v1.8.0
       with:
