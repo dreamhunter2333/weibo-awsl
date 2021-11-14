@@ -20,6 +20,6 @@ jobs:
         username: ${{ secrets.username }}
         password: ${{ secrets.password }}
     - name: Build the Docker image
-      run: docker build . --file docker/Dockerfile --tag registry.cn-beijing.aliyuncs.com/dreamhunter/awsl:2.0
+      run: docker build . --file docker/dockerfile --tag registry.cn-beijing.aliyuncs.com/dreamhunter/awsl:2.0
     - name: Push the Docker image
       run: docker push registry.cn-beijing.aliyuncs.com/dreamhunter/awsl:2.0
