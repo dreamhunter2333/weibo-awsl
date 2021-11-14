@@ -7,7 +7,6 @@ from fastapi import APIRouter
 from fastapi.responses import RedirectResponse
 from sqlalchemy.sql import func
 
-from .config import settings
 from .models import DBSession, Mblog, Pic
 
 

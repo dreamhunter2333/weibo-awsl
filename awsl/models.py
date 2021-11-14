@@ -57,7 +57,8 @@ class Tools():
     def update_mblog(wbdata: dict) -> str:
         if not wbdata or not wbdata.get("retweeted_status"):
             return ""
-        _logger.info("awsl update db mblog id=%s mblogid=%s" % (wbdata["id"], wbdata["mblogid"]))
+        _logger.info("awsl update db mblog id=%s mblogid=%s" %
+                     (wbdata["id"], wbdata["mblogid"]))
         session = DBSession()
         mblog = Mblog(
             id=wbdata["id"],
