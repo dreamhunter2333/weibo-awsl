@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     cookie_sub: str
     keyword: str
     max_page: int
-    dbpath: str
+    db_url: str
     ttl_time: int
 
     class Config:

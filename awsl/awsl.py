@@ -5,8 +5,9 @@ from typing import Any
 import requests
 import threading
 
+from awsl.models import Tools
+
 from .config import settings
-from .tools import SqlTools
 
 
 _logger = logging.getLogger(__name__)
@@ -23,43 +24,33 @@ class WbAwsl(object):
         self.keyword = settings.keyword
         self.max_page = settings.max_page
         self.ttl_time = settings.ttl_time
-        self.dbpath = settings.dbpath
-        self.init_db()
+        Tools.init_db()
         _logger.info("awsl init done %s" % settings)
 
     def run(self):
-        max_id = self.select_max_id()
+        max_id = Tools.select_max_id()
         _logger.info("awsl run: max_id=%s" % max_id)
-        sql_tools = SqlTools(self.dbpath)
         try:
             for wbdata in self.get_wbdata(max_id):
                 try:
-                    self.update_db(sql_tools, wbdata)
+                    re_mblogid = Tools.update_mblog(wbdata)
+                    re_wbdata = self.wb_get(WB_SHOW_URL.format(
+                        re_mblogid)) if re_mblogid else {}
+                    Tools.update_pic(wbdata, re_wbdata)
                 except Exception as e:
                     _logger.exception(e)
         except Exception as e:
             _logger.exception(e)
-        sql_tools.close()
         threading.Timer(self.ttl_time, self.run).start()
 
     def start(self) -> None:
         threading.Timer(0, self.run).start()
 
-    @property
-    def headers(self) -> dict:
-        return {
-            "cookie": WB_COOKIE.format(settings.cookie_sub)
-        }
-
-    def select_max_id(self) -> int:
-        res = SqlTools(self.dbpath).auto_fetchone(
-            "SELECT max(id) FROM awsl_mblog"
-        )
-        return res[0] if res and res[0] else 0
-
     def wb_get(self, url) -> Any:
         try:
-            res = requests.get(url=url, headers=self.headers)
+            res = requests.get(url=url, headers={
+                "cookie": WB_COOKIE.format(settings.cookie_sub)
+            })
             return res.json()
         except Exception as e:
             _logger.exception(e)
@@ -68,7 +59,8 @@ class WbAwsl(object):
     def get_wbdata(self, max_id: int) -> dict:
         for page in range(1, self.max_page):
             wbdatas = self.wb_get(url=self.url + str(page))
-            wbdatas = wbdatas.get("data", {}).get("list", []) if wbdatas else []
+            wbdatas = wbdatas.get("data", {}).get(
+                "list", []) if wbdatas else []
             for wbdata in wbdatas:
                 if wbdata["id"] <= max_id:
                     break
@@ -77,37 +69,3 @@ class WbAwsl(object):
                     continue
                 yield wbdata
             time.sleep(10)
-
-    def update_db(self, sql_tools: SqlTools, wbdata: dict) -> None:
-        if not wbdata.get("retweeted_status"):
-            return
-        _logger.info("awsl update db id=%s mblogid=%s" % (wbdata["id"], wbdata["mblogid"]))
-        sql_tools.execute_commit(
-            "INSERT INTO awsl_mblog VALUES ('%s', '%s', '%s', '%s', '%s', '%s')" % (
-                wbdata["id"], wbdata["mblogid"],
-                wbdata["retweeted_status"]["id"], wbdata["retweeted_status"]["mblogid"],
-                wbdata["retweeted_status"]["user"]["id"],
-                json.dumps(wbdata["retweeted_status"]["user"])
-            )
-        )
-        re_wbdata = self.wb_get(WB_SHOW_URL.format(wbdata["retweeted_status"]["mblogid"]))
-        pic_infos = re_wbdata.get("pic_infos", {})
-        for sequence, pic_id in enumerate(re_wbdata.get("pic_ids", [])):
-            sql_tools.execute_commit(
-                "INSERT INTO awsl_pic VALUES ('%s', '%s', '%s', '%s')" % (
-                    wbdata["id"], sequence, pic_id, json.dumps(pic_infos[pic_id])
-                )
-            )
-
-    def init_db(self) -> None:
-        _logger.info("awsl init db")
-        SqlTools(self.dbpath).auto_commit("""
-            CREATE TABLE if not exists awsl_mblog (
-                id int, mblogid text, re_id int, re_mblogid text, re_user_id int, re_user text
-            );
-        """)
-        SqlTools(self.dbpath).auto_commit("""
-            CREATE TABLE if not exists awsl_pic (
-                awsl_id int, sequence int, pic_id text, pic_info text
-            );
-        """)
