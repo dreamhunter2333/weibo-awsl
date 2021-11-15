@@ -58,7 +58,7 @@ class Tools():
     @staticmethod
     def select_max_id() -> int:
         session = DBSession()
-        mblog = session.query(func.max(Mblog.id)).one()
+        mblog = session.query(func.max(Mblog.id)).filter(Mblog.uid == settings.uid).one()
         session.close()
         return int(mblog[0]) if mblog and mblog[0] else 0
 
@@ -108,7 +108,7 @@ class Tools():
         session = DBSession()
         res = session.query(AwslProducer).filter(
             AwslProducer.uid == settings.uid).one_or_none()
-        if not res or not res[0]:
+        if not res:
             awsl_producer = AwslProducer(
                 name=profile["data"]['user']["screen_name"],
                 profile=profile["data"]['user'])
