@@ -55,7 +55,10 @@ class Tools():
 
     @staticmethod
     def update_mblog(wbdata: dict) -> str:
-        if not wbdata or not wbdata.get("retweeted_status"):
+        if not wbdata:
+            return ""
+        origin_wbdata = wbdata.get("retweeted_status") or wbdata
+        if not origin_wbdata.get("user"):
             return ""
         _logger.info("awsl update db mblog id=%s mblogid=%s" %
                      (wbdata["id"], wbdata["mblogid"]))
@@ -63,15 +66,15 @@ class Tools():
         mblog = Mblog(
             id=wbdata["id"],
             mblogid=wbdata["mblogid"],
-            re_id=wbdata["retweeted_status"]["id"],
-            re_mblogid=wbdata["retweeted_status"]["mblogid"],
-            re_user_id=wbdata["retweeted_status"]["user"]["id"],
-            re_user=json.dumps(wbdata["retweeted_status"]["user"])
+            re_id=origin_wbdata["id"],
+            re_mblogid=origin_wbdata["mblogid"],
+            re_user_id=origin_wbdata["user"]["id"],
+            re_user=json.dumps(origin_wbdata["user"])
         )
         session.add(mblog)
         session.commit()
         session.close()
-        return wbdata["retweeted_status"]["mblogid"]
+        return origin_wbdata["mblogid"]
 
     @staticmethod
     def update_pic(wbdata: dict, re_wbdata: dict) -> None:
