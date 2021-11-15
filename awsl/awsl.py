@@ -1,6 +1,5 @@
 import time
 import logging
-from typing import Any
 import requests
 import threading
 
@@ -13,6 +12,7 @@ _logger = logging.getLogger(__name__)
 WB_DATA_URL = "https://weibo.com/ajax/statuses/mymblog?uid={}&page="
 WB_SHOW_URL = "https://weibo.com/ajax/statuses/show?id={}"
 WB_COOKIE = "SUB={}"
+WB_PROFILE = "https://weibo.com/ajax/profile/info?uid={}"
 
 
 class WbAwsl(object):
@@ -24,9 +24,10 @@ class WbAwsl(object):
         self.max_page = settings.max_page
         self.ttl_time = settings.ttl_time
         Tools.init_db()
+        self.init_awsl_producer()
         _logger.info("awsl init done %s" % settings)
 
-    def run(self):
+    def run(self) -> None:
         max_id = Tools.select_max_id()
         _logger.info("awsl run: max_id=%s" % max_id)
         try:
@@ -45,7 +46,7 @@ class WbAwsl(object):
     def start(self) -> None:
         threading.Timer(0, self.run).start()
 
-    def wb_get(self, url) -> Any:
+    def wb_get(self, url) -> dict:
         try:
             res = requests.get(url=url, headers={
                 "cookie": WB_COOKIE.format(settings.cookie_sub)
@@ -68,3 +69,11 @@ class WbAwsl(object):
                     continue
                 yield wbdata
             time.sleep(10)
+
+    def init_awsl_producer(self) -> None:
+        try:
+            profile = self.wb_get(url=WB_PROFILE.format(settings.uid))
+            Tools.update_awsl_producer(profile)
+        except Exception as e:
+            _logger.exception(e)
+            return None

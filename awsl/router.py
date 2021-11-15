@@ -7,8 +7,8 @@ from fastapi import APIRouter
 from fastapi.responses import RedirectResponse
 from sqlalchemy.sql import func
 
-from .models import DBSession, Mblog, Pic
-
+from .models import AwslProducer, DBSession, Mblog, Pic
+from .config import settings
 
 _logger = logging.getLogger(__name__)
 WB_URL_PREFIX = "https://weibo.com/{}/{}"
@@ -16,11 +16,23 @@ WB_URL_PREFIX = "https://weibo.com/{}/{}"
 router = APIRouter()
 
 
-@router.get("/list")
-def awsl_list(limit: Optional[int] = 10, offset: Optional[int] = 0):
-    _logger.info("list get limit %s offest %s" % (limit, offset))
+@router.get("/producers")
+def awsl_producers():
     session = DBSession()
-    pics = session.query(Pic).limit(limit).offset(offset).all()
+    producers = session.query(AwslProducer).all()
+    res = [{
+        "uid": producer.uid,
+        "name": producer.name
+    } for producer in producers]
+    session.close()
+    return res
+
+
+@router.get("/list")
+def awsl_list(uid: Optional[str] = settings.uid, limit: Optional[int] = 10, offset: Optional[int] = 0):
+    _logger.info("list get uid %s limit %s offest %s" % (uid, limit, offset))
+    session = DBSession()
+    pics = session.query(Pic).join(Mblog, Pic.awsl_id == Mblog.id).filter(Mblog.uid == uid).order_by(Pic.awsl_id.desc()).limit(limit).offset(offset).all()
     res = [{
         "wb_url": WB_URL_PREFIX.format(pic.awsl_mblog.re_user_id, pic.awsl_mblog.re_mblogid),
         "pic_info": json.loads(pic.pic_info)
@@ -30,9 +42,9 @@ def awsl_list(limit: Optional[int] = 10, offset: Optional[int] = 0):
 
 
 @router.get("/list_count")
-def awsl_list_count():
+def awsl_list_count(uid: Optional[str] = settings.uid):
     session = DBSession()
-    res = session.query(func.count(Pic.id)).one()
+    res = session.query(func.count(Pic.id)).join(Mblog, Pic.awsl_id == Mblog.id).filter(Mblog.uid == uid).one()
     session.close()
     return int(res[0]) if res else 0
 

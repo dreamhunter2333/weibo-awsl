@@ -1,7 +1,7 @@
 import json
 import logging
 
-from sqlalchemy import Column, String, INT, TEXT, ForeignKey, create_engine
+from sqlalchemy import Column, String, INT, JSON, TEXT, ForeignKey, create_engine
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
@@ -12,6 +12,15 @@ _logger = logging.getLogger(__name__)
 engine = create_engine(settings.db_url)
 DBSession = sessionmaker(bind=engine)
 Base = declarative_base(engine)
+
+
+class AwslProducer(Base):
+    __tablename__ = 'awsl_producer'
+
+    id = Column(INT, primary_key=True, autoincrement=True)
+    uid = Column(String(255), default=settings.uid)
+    name = Column(String(255))
+    profile = Column(JSON)
 
 
 class Mblog(Base):
@@ -90,4 +99,20 @@ class Tools():
                 pic_info=json.dumps(pic_infos[pic_id]),
             ))
         session.commit()
+        session.close()
+
+    @staticmethod
+    def update_awsl_producer(profile: dict) -> None:
+        if not profile or not profile.get("data", {}).get("user"):
+            return
+        session = DBSession()
+        res = session.query(AwslProducer).filter(
+            AwslProducer.uid == settings.uid).one_or_none()
+        if not res or not res[0]:
+            awsl_producer = AwslProducer(
+                name=profile["data"]['user']["screen_name"],
+                profile=profile["data"]['user'])
+            session.add(awsl_producer)
+            _logger.info("awsl add awsl_producer done %s" % awsl_producer.name)
+            session.commit()
         session.close()
