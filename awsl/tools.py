@@ -47,8 +47,9 @@ class Tools:
         session.query(AwslProducer).filter(
             AwslProducer.uid == uid
         ).update({
-            AwslProducer.max_id: max_id
+            AwslProducer.max_id: str(max_id)
         })
+        session.commit()
         session.close()
 
     @staticmethod
