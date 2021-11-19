@@ -59,7 +59,7 @@ class WbAwsl(object):
             wbdatas = wbdatas.get("data", {}).get(
                 "list", []) if wbdatas else []
             for index, wbdata in enumerate(wbdatas):
-                if wbdata["id"] <= max_id and index > 0:
+                if wbdata["id"] <= max_id and page == 1 and index > 0:
                     break
                 # TODO: 正则是不是更好
                 if self.keyword not in wbdata["text"]:
