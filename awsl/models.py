@@ -4,7 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from .config import settings
 
-engine = create_engine(settings.db_url)
+engine = create_engine(settings.db_url, pool_size=100)
 DBSession = sessionmaker(bind=engine)
 Base = declarative_base(engine)
 

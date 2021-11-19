@@ -34,23 +34,27 @@ class Tools:
     @staticmethod
     def select_max_id(uid: str) -> int:
         session = DBSession()
-        mblog = session.query(func.max(Mblog.id)).filter(
-            Mblog.uid == uid).one()
-        mblog = session.query(func.max(Mblog.id)).filter(
-            Mblog.uid == uid).one()
-        session.close()
+        try:
+            mblog = session.query(func.max(Mblog.id)).filter(
+                Mblog.uid == uid).one()
+        except Exception as e:
+            session.close()
+            raise e
         return int(mblog[0]) if mblog and mblog[0] else 0
 
     @staticmethod
     def update_max_id(uid: str, max_id: int) -> None:
         session = DBSession()
-        session.query(AwslProducer).filter(
-            AwslProducer.uid == uid
-        ).update({
-            AwslProducer.max_id: str(max_id)
-        })
-        session.commit()
-        session.close()
+        try:
+            session.query(AwslProducer).filter(
+                AwslProducer.uid == uid
+            ).update({
+                AwslProducer.max_id: str(max_id)
+            })
+            session.commit()
+        except Exception as e:
+            session.close()
+            raise e
 
     @staticmethod
     def update_mblog(awsl_producer: AwslProducer, wbdata: dict) -> str:
@@ -62,18 +66,22 @@ class Tools:
         _logger.info("awsl update db mblog awsl_producer=%s id=%s mblogid=%s" %
                      (awsl_producer.name, wbdata["id"], wbdata["mblogid"]))
         session = DBSession()
-        mblog = Mblog(
-            id=wbdata["id"],
-            uid=awsl_producer.uid,
-            mblogid=wbdata["mblogid"],
-            re_id=origin_wbdata["id"],
-            re_mblogid=origin_wbdata["mblogid"],
-            re_user_id=origin_wbdata["user"]["id"],
-            re_user=json.dumps(origin_wbdata["user"])
-        )
-        session.add(mblog)
-        session.commit()
-        session.close()
+        try:
+            mblog = Mblog(
+                id=wbdata["id"],
+                uid=awsl_producer.uid,
+                mblogid=wbdata["mblogid"],
+                re_id=origin_wbdata["id"],
+                re_mblogid=origin_wbdata["mblogid"],
+                re_user_id=origin_wbdata["user"]["id"],
+                re_user=json.dumps(origin_wbdata["user"])
+            )
+            session.add(mblog)
+            session.commit()
+        except Exception as e:
+            session.close()
+            raise e
+
         return origin_wbdata["mblogid"]
 
     @staticmethod
@@ -82,19 +90,25 @@ class Tools:
             return
         pic_infos = re_wbdata.get("pic_infos", {})
         session = DBSession()
-        for sequence, pic_id in enumerate(re_wbdata.get("pic_ids", [])):
-            session.add(Pic(
-                awsl_id=wbdata["id"],
-                sequence=sequence,
-                pic_id=pic_id,
-                pic_info=json.dumps(pic_infos[pic_id]),
-            ))
-        session.commit()
-        session.close()
+        try:
+            for sequence, pic_id in enumerate(re_wbdata.get("pic_ids", [])):
+                session.add(Pic(
+                    awsl_id=wbdata["id"],
+                    sequence=sequence,
+                    pic_id=pic_id,
+                    pic_info=json.dumps(pic_infos[pic_id]),
+                ))
+            session.commit()
+        except Exception as e:
+            session.close()
+            raise e
 
     @staticmethod
     def find_all_awsl_producer() -> List[AwslProducer]:
         session = DBSession()
-        awsl_producers = session.query(AwslProducer).all()
-        session.close()
+        try:
+            awsl_producers = session.query(AwslProducer).all()
+        except Exception as e:
+            session.close()
+            raise e
         return awsl_producers
