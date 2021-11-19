@@ -61,6 +61,10 @@ class WbAwsl(object):
             wbdatas = Tools.wb_get(url=self.url + str(page))
             wbdatas = wbdatas.get("data", {}).get(
                 "list", []) if wbdatas else []
+
+            if not wbdatas:
+                return
+
             for wbdata in wbdatas:
                 if wbdata["id"] <= max_id and page == 1:
                     continue
