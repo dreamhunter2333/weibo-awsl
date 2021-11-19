@@ -24,9 +24,15 @@ class WbAwsl(object):
     @staticmethod
     def start() -> None:
         awsl_producers = Tools.find_all_awsl_producer()
+        threads = []
         for awsl_producer in awsl_producers:
             awsl = WbAwsl(awsl_producer)
-            threading.Thread(target=awsl.run).start()
+            t = threading.Thread(target=awsl.run)
+            t.start()
+
+        # wating for all task down
+        for t in threads:
+            t.join()
 
     def run(self) -> None:
         max_id = self.max_id or Tools.select_max_id(self.uid)
