@@ -37,12 +37,11 @@ class WbAwsl(object):
     def run(self) -> None:
         max_id = self.max_id or Tools.select_max_id(self.uid)
         _logger.info("awsl run: uid=%s max_id=%s" % (self.uid, max_id))
-        max_id_flag = True
         try:
             for wbdata in self.get_wbdata(max_id):
-                if max_id_flag:
+                if wbdata["id"] > max_id:
                     Tools.update_max_id(self.uid, wbdata["id"])
-                    max_id_flag = False
+                    max_id = wbdata["id"]
                 try:
                     re_mblogid = Tools.update_mblog(self.awsl_producer, wbdata)
                     re_wbdata = Tools.wb_get(WB_SHOW_URL.format(
