@@ -28,11 +28,14 @@ class WbAwsl(object):
         for awsl_producer in awsl_producers:
             awsl = WbAwsl(awsl_producer)
             t = threading.Thread(target=awsl.run)
+            threads.append(t)
             t.start()
 
         # wating for all task down
         for t in threads:
             t.join()
+
+        _logger.info("awsl run all awsl_producers done")
 
     def run(self) -> None:
         max_id = self.max_id or Tools.select_max_id(self.uid)
@@ -62,7 +65,7 @@ class WbAwsl(object):
                 if wbdata["id"] <= max_id and page == 1:
                     continue
                 elif wbdata["id"] <= max_id:
-                    break
+                    return
                 # TODO: 正则是不是更好
                 if self.keyword not in wbdata["text"]:
                     continue
