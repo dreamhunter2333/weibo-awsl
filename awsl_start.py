@@ -23,6 +23,6 @@ def start_awsl():
 app.conf.beat_schedule = {
     "awsl-tasks": {
         "task": "awsl_start.start_awsl",
-        "schedule": crontab(hour="*", minute=50)
+        "schedule": crontab(hour="*", minute=1)
     }
 }
