@@ -14,7 +14,6 @@ WB_COOKIE = "SUB={}"
 class Settings(BaseSettings):
     uid: str
     cookie_sub: str
-    keyword: str
     max_page: int
     db_url: str
     broker: str
