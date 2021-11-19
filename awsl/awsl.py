@@ -1,64 +1,56 @@
 import time
 import logging
-import requests
 import threading
 
-from awsl.models import Tools
+from .tools import Tools
 
-from .config import settings
+from .config import settings, WB_DATA_URL, WB_SHOW_URL
 
 
 _logger = logging.getLogger(__name__)
-WB_DATA_URL = "https://weibo.com/ajax/statuses/mymblog?uid={}&page="
-WB_SHOW_URL = "https://weibo.com/ajax/statuses/show?id={}"
-WB_COOKIE = "SUB={}"
-WB_PROFILE = "https://weibo.com/ajax/profile/info?uid={}"
 
 
 class WbAwsl(object):
 
-    def __init__(self) -> None:
-        self.url = WB_DATA_URL.format(settings.uid)
-        self.cookie_sub = ""
-        self.keyword = settings.keyword
-        self.max_page = settings.max_page
-        self.ttl_time = settings.ttl_time
+    def __init__(self, awsl_producer) -> None:
+        self.awsl_producer = awsl_producer
+        self.uid = awsl_producer.uid
+        self.max_id = int(awsl_producer.max_id) if awsl_producer.max_id else 0
+        self.url = WB_DATA_URL.format(awsl_producer.uid)
+        self.keyword = awsl_producer.keyword
         Tools.init_db()
-        self.init_awsl_producer()
-        _logger.info("awsl init done %s" % settings)
+        _logger.info("awsl init done %s" % awsl_producer)
+
+    @staticmethod
+    def start() -> None:
+        awsl_producers = Tools.find_all_awsl_producer()
+        for awsl_producer in awsl_producers:
+            awsl = WbAwsl(awsl_producer)
+            threading.Thread(target=awsl.run).start()
 
     def run(self) -> None:
-        max_id = Tools.select_max_id()
-        _logger.info("awsl run: max_id=%s" % max_id)
+        max_id = self.max_id or Tools.select_max_id(self.uid)
+        _logger.info("awsl run: uid=%s max_id=%s" % (self.uid, max_id))
+        max_id_flag = True
         try:
             for wbdata in self.get_wbdata(max_id):
+                if max_id_flag:
+                    Tools.update_max_id(self.uid, wbdata["id"])
+                    max_id_flag = False
                 try:
-                    re_mblogid = Tools.update_mblog(wbdata)
-                    re_wbdata = self.wb_get(WB_SHOW_URL.format(
+                    re_mblogid = Tools.update_mblog(self.awsl_producer, wbdata)
+                    re_wbdata = Tools.wb_get(WB_SHOW_URL.format(
                         re_mblogid)) if re_mblogid else {}
                     Tools.update_pic(wbdata, re_wbdata)
                 except Exception as e:
                     _logger.exception(e)
         except Exception as e:
             _logger.exception(e)
-        threading.Timer(self.ttl_time, self.run).start()
-
-    def start(self) -> None:
-        threading.Timer(0, self.run).start()
-
-    def wb_get(self, url) -> dict:
-        try:
-            res = requests.get(url=url, headers={
-                "cookie": WB_COOKIE.format(settings.cookie_sub)
-            })
-            return res.json()
-        except Exception as e:
-            _logger.exception(e)
-            return None
+        _logger.info("awsl run: uid=%s done" % self.uid)
 
     def get_wbdata(self, max_id: int) -> dict:
-        for page in range(1, self.max_page):
-            wbdatas = self.wb_get(url=self.url + str(page))
+        for page in range(1, settings.max_page):
+            wbdatas = Tools.wb_get(url=self.url + str(page))
             wbdatas = wbdatas.get("data", {}).get(
                 "list", []) if wbdatas else []
             for wbdata in wbdatas:
@@ -69,11 +61,3 @@ class WbAwsl(object):
                     continue
                 yield wbdata
             time.sleep(10)
-
-    def init_awsl_producer(self) -> None:
-        try:
-            profile = self.wb_get(url=WB_PROFILE.format(settings.uid))
-            Tools.update_awsl_producer(profile)
-        except Exception as e:
-            _logger.exception(e)
-            return None

@@ -2,9 +2,9 @@ version: "2"
 
 services:
   awsl-py:
-    build:
-      context: ../
-      dockerfile: ./docker/Dockerfile
+    # build:
+    #   context: ../
+    #   dockerfile: ./docker/Dockerfile
     image: registry.cn-beijing.aliyuncs.com/dreamhunter/awsl:2.0
     container_name: awsl-py
     environment:
@@ -13,3 +13,29 @@ services:
       - ../.env.local:.env
     ports:
         - "8000:8000"
+
+  awsl-task:
+    image: registry.cn-beijing.aliyuncs.com/dreamhunter/awsl:2.0
+    container_name: awsl-redis
+    command: celery -A awsl_start worker --beat --loglevel=INFO
+    restart: always
+    environment:
+      ENV_FILE: .env
+    volumes:
+      - ../.env.local:.env
+
+  awsl-redis:
+    image: redis
+    container_name: awsl-redis
+    command: redis-server --requirepass cXFxcXFxcXExCg== --appendonly yes
+    ports:
+        - "6379:6379"
+    volumes:
+        - awsl_redis_data:/data
+    restart: always
+    environment:
+        - TZ=Asia/Shanghai
+        - LANG=en_US.UTF-8
+
+volumes:
+  awsl_redis_data:
