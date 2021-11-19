@@ -4,9 +4,10 @@ from typing import List
 from fastapi.responses import JSONResponse
 from fastapi import status
 from fastapi import APIRouter
+from celery import Celery
 
 from ..models import AwslProducer, DBSession
-from ..config import WB_PROFILE
+from ..config import settings, WB_PROFILE
 from ..tools import Tools
 from .models import ProducerItem, ProducerRes, Message
 
@@ -58,4 +59,6 @@ def add_awsl_producers(producer: ProducerItem):
     _logger.info("awsl add awsl_producer done %s" % awsl_producer.name)
     session.commit()
     session.close()
+    app = Celery('awsl-tasks', broker=settings.broker)
+    app.send_task("awsl_start.start_awsl")
     return True
