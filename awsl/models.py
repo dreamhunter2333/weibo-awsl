@@ -15,7 +15,7 @@ class AwslProducer(Base):
     id = Column(INT, primary_key=True, autoincrement=True)
     uid = Column(String(255), nullable=False)
     name = Column(String(255))
-    keyword = Column(String(255), nullable=False)
+    keyword = Column(String(255))
     profile = Column(JSON)
     max_id = Column(String(255))
 

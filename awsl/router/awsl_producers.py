@@ -29,10 +29,10 @@ def awsl_producers():
 
 @router.post("/producers", response_model=bool, responses={404: {"model": Message}})
 def add_awsl_producers(producer: ProducerItem):
-    if not producer.uid or not producer.keyword:
+    if not producer.uid:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={"message": "uid or keyword is None"}
+            content={"message": "uid is None"}
         )
     profile = Tools.wb_get(url=WB_PROFILE.format(producer.uid))
     if not profile or not profile.get("data", {}).get("user"):
@@ -51,7 +51,7 @@ def add_awsl_producers(producer: ProducerItem):
         )
     awsl_producer = AwslProducer(
         uid=producer.uid,
-        keyword=producer.keyword,
+        keyword=producer.keyword or "",
         name=profile["data"]['user']["screen_name"],
         profile=profile["data"]['user'])
     session.add(awsl_producer)
