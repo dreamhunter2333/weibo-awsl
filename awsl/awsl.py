@@ -1,3 +1,4 @@
+import re
 import time
 import logging
 import threading
@@ -8,6 +9,7 @@ from .config import settings, WB_DATA_URL, WB_SHOW_URL
 
 
 _logger = logging.getLogger(__name__)
+WB_EMO = re.compile(r'\[.*?\]')
 
 
 class WbAwsl(object):
@@ -71,7 +73,8 @@ class WbAwsl(object):
                 elif wbdata["id"] <= max_id:
                     return
                 # TODO: 正则是不是更好
-                if self.keyword not in wbdata["text"]:
+                text_raw = WB_EMO.sub("", wbdata["text_raw"])
+                if self.keyword not in text_raw:
                     continue
                 yield wbdata
             time.sleep(10)
