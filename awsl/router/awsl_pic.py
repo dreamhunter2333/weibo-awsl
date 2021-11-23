@@ -31,9 +31,8 @@ def awsl_list(uid: Optional[str] = settings.uid, limit: Optional[int] = 10, offs
             "wb_url": WB_URL_PREFIX.format(pic.awsl_mblog.re_user_id, pic.awsl_mblog.re_mblogid),
             "pic_info": json.loads(pic.pic_info)
         } for pic in pics if pic.awsl_mblog]
-    except Exception as e:
+    finally:
         session.close()
-        raise e
     return res
 
 
@@ -43,7 +42,6 @@ def awsl_list_count(uid: Optional[str] = settings.uid) -> int:
     try:
         res = session.query(func.count(Pic.id)).join(
             Mblog, Pic.awsl_id == Mblog.id).filter(Mblog.uid == uid).one()
-    except Exception as e:
+    finally:
         session.close()
-        raise e
     return int(res[0]) if res else 0

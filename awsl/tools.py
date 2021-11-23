@@ -37,9 +37,8 @@ class Tools:
         try:
             mblog = session.query(func.max(Mblog.id)).filter(
                 Mblog.uid == uid).one()
-        except Exception as e:
+        finally:
             session.close()
-            raise e
         return int(mblog[0]) if mblog and mblog[0] else 0
 
     @staticmethod
@@ -52,9 +51,8 @@ class Tools:
                 AwslProducer.max_id: str(max_id)
             })
             session.commit()
-        except Exception as e:
+        finally:
             session.close()
-            raise e
 
     @staticmethod
     def update_mblog(awsl_producer: AwslProducer, wbdata: dict) -> str:
@@ -78,9 +76,8 @@ class Tools:
             )
             session.add(mblog)
             session.commit()
-        except Exception as e:
+        finally:
             session.close()
-            raise e
 
         return origin_wbdata["mblogid"]
 
@@ -99,16 +96,14 @@ class Tools:
                     pic_info=json.dumps(pic_infos[pic_id]),
                 ))
             session.commit()
-        except Exception as e:
+        finally:
             session.close()
-            raise e
 
     @staticmethod
     def find_all_awsl_producer() -> List[AwslProducer]:
         session = DBSession()
         try:
             awsl_producers = session.query(AwslProducer).all()
-        except Exception as e:
+        finally:
             session.close()
-            raise e
         return awsl_producers

@@ -25,9 +25,8 @@ def awsl_producers():
             "uid": producer.uid,
             "name": producer.name
         } for producer in producers]
-    except Exception as e:
+    finally:
         session.close()
-        raise e
     return res
 
 
@@ -62,9 +61,8 @@ def add_awsl_producers(producer: ProducerItem):
         session.add(awsl_producer)
         _logger.info("awsl add awsl_producer done %s" % awsl_producer.name)
         session.commit()
-    except Exception as e:
+    finally:
         session.close()
-        raise e
     app = Celery('awsl-tasks', broker=settings.broker)
     app.send_task("awsl_start.start_awsl")
     return True
