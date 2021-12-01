@@ -4,6 +4,7 @@ import logging
 import threading
 
 from .tools import Tools
+from .telegram_bot import TelegramBot
 
 from .config import settings, WB_DATA_URL, WB_SHOW_URL
 
@@ -51,6 +52,7 @@ class WbAwsl(object):
                     re_mblogid = Tools.update_mblog(self.awsl_producer, wbdata)
                     re_wbdata = Tools.wb_get(WB_SHOW_URL.format(
                         re_mblogid)) if re_mblogid else {}
+                    TelegramBot.send_photos(re_wbdata)
                     Tools.update_pic(wbdata, re_wbdata)
                 except Exception as e:
                     _logger.exception(e)
