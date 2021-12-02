@@ -1,4 +1,5 @@
 import json
+import pika
 import logging
 import requests
 
@@ -9,6 +10,11 @@ from .models import AwslProducer, Mblog, Pic, Base, DBSession
 from .config import settings, WB_COOKIE
 
 _logger = logging.getLogger(__name__)
+
+# MQ
+connection = pika.BlockingConnection(pika.URLParameters(settings.pika_url))
+channel = connection.channel()
+channel.queue_declare(queue=settings.queue, durable=True)
 
 
 class Tools:
@@ -107,3 +113,16 @@ class Tools:
         finally:
             session.close()
         return awsl_producers
+
+    @staticmethod
+    def send2mq(re_mblogid: str, re_wbdata: dict) -> None:
+        try:
+            channel.basic_publish(
+                exchange='',
+                routing_key=settings.queue,
+                body=json.dumps(re_wbdata),
+                properties=pika.BasicProperties(delivery_mode=2)
+            )
+            _logger.info("send to mq re_mblogid %s", re_mblogid)
+        except Exception as e:
+            _logger.exception(e)

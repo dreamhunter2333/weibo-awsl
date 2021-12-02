@@ -24,18 +24,12 @@ services:
     volumes:
       - ../.env.local:.env
 
-  awsl-redis:
-    image: redis
+  awsl-bot:
+    image: registry.cn-beijing.aliyuncs.com/dreamhunter/awsl:2.0
     container_name: awsl-redis
-    command: redis-server --requirepass cXFxcXFxcXExCg== --appendonly yes
-    ports:
-        - "6379:6379"
-    volumes:
-        - awsl_redis_data:/data
+    command: python3 bot_start.py
     restart: always
     environment:
-        - TZ=Asia/Shanghai
-        - LANG=en_US.UTF-8
-
-volumes:
-  awsl_redis_data:
+      ENV_FILE: .env
+    volumes:
+      - ../.env.local:.env

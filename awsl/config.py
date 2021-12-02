@@ -17,9 +17,8 @@ class Settings(BaseSettings):
     max_page: int
     db_url: str
     broker: str
-    telebot_token: str
-    chat_id: str
-    http_url: str
+    pika_url: str
+    queue: str
 
     class Config:
         env_file = os.environ.get("ENV_FILE", ".env")
