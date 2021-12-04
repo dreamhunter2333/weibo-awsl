@@ -49,4 +49,8 @@ def start_consuming():
         queue=settings.queue,
         auto_ack=False
     )
-    channel.start_consuming()
+    try:
+        channel.start_consuming()
+    except Exception as e:
+        connection.close()
+        raise e
