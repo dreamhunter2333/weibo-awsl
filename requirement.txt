@@ -28,6 +28,7 @@ python-dotenv==0.19.0
 pytz==2021.3
 redis==4.0.1
 requests==2.26.0
+retry==0.9.2
 six==1.16.0
 SQLAlchemy==1.4.27
 starlette==0.14.2

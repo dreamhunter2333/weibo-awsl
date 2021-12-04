@@ -12,9 +12,16 @@ from .config import settings, WB_COOKIE
 _logger = logging.getLogger(__name__)
 
 # MQ
-connection = pika.BlockingConnection(pika.URLParameters(settings.pika_url))
-channel = connection.channel()
-channel.queue_declare(queue=settings.queue, durable=True)
+channel = None
+
+
+def get_channel() -> None:
+    global channel
+    if channel is not None and channel.is_open:
+        return
+    connection = pika.BlockingConnection(pika.URLParameters(settings.pika_url))
+    channel = connection.channel()
+    channel.queue_declare(queue=settings.queue, durable=True)
 
 
 class Tools:
@@ -117,6 +124,7 @@ class Tools:
     @staticmethod
     def send2mq(re_mblogid: str, re_wbdata: dict) -> None:
         try:
+            get_channel()
             channel.basic_publish(
                 exchange='',
                 routing_key=settings.queue,

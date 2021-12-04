@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     http_url: str
 
     class Config:
-        env_file = os.environ.get("ENV_FILE", ".env.bot")
+        env_file = os.environ.get("ENV_FILE", ".env")
 
 
 settings = Settings()

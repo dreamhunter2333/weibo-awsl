@@ -17,7 +17,7 @@ services:
   awsl-task:
     image: registry.cn-beijing.aliyuncs.com/dreamhunter/awsl:2.0
     container_name: awsl-redis
-    command: celery -A awsl_start worker --beat --loglevel=INFO
+    entrypoint: celery -A awsl_start worker --beat --loglevel=INFO
     restart: always
     environment:
       ENV_FILE: .env
@@ -27,7 +27,7 @@ services:
   awsl-bot:
     image: registry.cn-beijing.aliyuncs.com/dreamhunter/awsl:2.0
     container_name: awsl-redis
-    command: python3 bot_start.py
+    entrypoint: python3 bot_start.py
     restart: always
     environment:
       ENV_FILE: .env
