@@ -19,23 +19,6 @@ bot = telebot.TeleBot(settings.telebot_token)
 apihelper.proxy = {'https': settings.http_url}
 lock = threading.Lock()
 
-# MQ
-channel = None
-
-
-def get_channel() -> None:
-    global channel
-    if channel is not None and channel.is_open:
-        return
-    connection = pika.BlockingConnection(pika.URLParameters(settings.pika_url))
-    channel = connection.channel()
-    channel.queue_declare(queue=settings.queue, durable=True)
-    channel.basic_consume(
-        on_message_callback=send_photos,
-        queue=settings.queue,
-        auto_ack=False
-    )
-
 
 def send_photos(ch, method, properties, body) -> None:
     lock.acquire()
@@ -58,5 +41,12 @@ def send_photos(ch, method, properties, body) -> None:
 @retry((pika.exceptions.AMQPConnectionError, telebot.apihelper.ApiTelegramException), delay=5, jitter=(1, 3), logger=_logger)
 def start_consuming():
     _logger.info('[*] Waiting for messages. To exit press CTRL+C')
-    get_channel()
+    connection = pika.BlockingConnection(pika.URLParameters(settings.pika_url))
+    channel = connection.channel()
+    channel.queue_declare(queue=settings.queue, durable=True)
+    channel.basic_consume(
+        on_message_callback=send_photos,
+        queue=settings.queue,
+        auto_ack=False
+    )
     channel.start_consuming()
