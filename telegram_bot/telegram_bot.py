@@ -27,12 +27,16 @@ def send_photos(ch, method, properties, body) -> None:
         pic_infos = re_wbdata.get("pic_infos", {})
         pic_ids = re_wbdata.get("pic_ids", [])
         for i in range(0, len(pic_ids), CHUNK_SIZE):
-            bot.send_media_group(chat_id=settings.chat_id, timeout=20, media=[
-                InputMediaPhoto(media=pic_infos[pic_id]["original"]["url"])
-                for pic_id in pic_ids[i:i+CHUNK_SIZE]
-            ])
-            _logger.info("send_media_group %s", pic_ids[i:i+CHUNK_SIZE])
-            time.sleep(10)
+            try:
+                bot.send_media_group(chat_id=settings.chat_id, timeout=20, media=[
+                    InputMediaPhoto(media=pic_infos[pic_id]["original"]["url"])
+                    for pic_id in pic_ids[i:i+CHUNK_SIZE]
+                ])
+                _logger.info("send_media_group %s", pic_ids[i:i+CHUNK_SIZE])
+            except telebot.apihelper.ApiTelegramException as e:
+                if e.error_code != 400:
+                    raise e
+            time.sleep(5)
         ch.basic_ack(delivery_tag=method.delivery_tag)
     finally:
         lock.release()
@@ -51,6 +55,5 @@ def start_consuming():
     )
     try:
         channel.start_consuming()
-    except Exception as e:
+    finally:
         connection.close()
-        raise e
