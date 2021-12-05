@@ -9,6 +9,7 @@ WB_COOKIE = "SUB={}"
 WB_PROFILE = "https://weibo.com/ajax/profile/info?uid={}"
 WB_URL_PREFIX = "https://weibo.com/{}/{}"
 WB_COOKIE = "SUB={}"
+CHUNK_SIZE = 9
 
 
 class Settings(BaseSettings):

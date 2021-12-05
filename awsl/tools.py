@@ -7,7 +7,7 @@ from typing import List
 from sqlalchemy.sql import func
 
 from .models import AwslProducer, Mblog, Pic, Base, DBSession
-from .config import settings, WB_COOKIE
+from .config import CHUNK_SIZE, settings, WB_COOKIE
 
 _logger = logging.getLogger(__name__)
 
@@ -125,12 +125,19 @@ class Tools:
     def send2mq(re_mblogid: str, re_wbdata: dict) -> None:
         try:
             get_channel()
-            channel.basic_publish(
-                exchange='',
-                routing_key=settings.queue,
-                body=json.dumps(re_wbdata),
-                properties=pika.BasicProperties(delivery_mode=2)
-            )
+            pic_infos = re_wbdata.get("pic_infos", {})
+            pic_ids = re_wbdata.get("pic_ids", [])
+            for i in range(0, len(pic_ids), CHUNK_SIZE):
+                channel.basic_publish(
+                    exchange='',
+                    routing_key=settings.queue,
+                    body=json.dumps([
+                        pic_infos[pic_id]["original"]["url"]
+                        for pic_id in pic_ids[i:i+CHUNK_SIZE]
+                    ]),
+                    properties=pika.BasicProperties(delivery_mode=2)
+                )
+                _logger.info("send mq %s", pic_ids[i:i+CHUNK_SIZE])
             _logger.info("send to mq re_mblogid %s", re_mblogid)
         except Exception as e:
             _logger.exception(e)

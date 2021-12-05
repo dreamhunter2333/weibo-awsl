@@ -10,7 +10,7 @@ from telebot import apihelper
 
 from telebot.types import InputMediaPhoto
 
-from .config import CHUNK_SIZE, settings
+from .config import settings
 
 _logger = logging.getLogger(__name__)
 
@@ -23,26 +23,19 @@ lock = threading.Lock()
 def send_photos(ch, method, properties, body) -> None:
     lock.acquire()
     try:
-        re_wbdata = json.loads(body)
-        pic_infos = re_wbdata.get("pic_infos", {})
-        pic_ids = re_wbdata.get("pic_ids", [])
-        for i in range(0, len(pic_ids), CHUNK_SIZE):
-            try:
-                bot.send_media_group(chat_id=settings.chat_id, timeout=20, media=[
-                    InputMediaPhoto(media=pic_infos[pic_id]["original"]["url"])
-                    for pic_id in pic_ids[i:i+CHUNK_SIZE]
-                ])
-                _logger.info("send_media_group %s", pic_ids[i:i+CHUNK_SIZE])
-            except telebot.apihelper.ApiTelegramException as e:
-                if e.error_code != 400:
-                    raise e
-            time.sleep(5)
+        pics = json.loads(body)
+        bot.send_media_group(chat_id=settings.chat_id, timeout=20, media=[
+            InputMediaPhoto(media=pic)
+            for pic in pics
+        ])
+        _logger.info("send_media_group %s", pics)
         ch.basic_ack(delivery_tag=method.delivery_tag)
     finally:
         lock.release()
+        time.sleep(10)
 
 
-@retry((pika.exceptions.AMQPConnectionError, telebot.apihelper.ApiTelegramException), delay=5, jitter=(1, 3), logger=_logger)
+@retry(Exception, delay=5, jitter=(1, 3), logger=_logger)
 def start_consuming():
     _logger.info('[*] Waiting for messages. To exit press CTRL+C')
     connection = pika.BlockingConnection(pika.URLParameters(settings.pika_url))

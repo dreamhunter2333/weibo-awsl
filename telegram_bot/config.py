@@ -2,8 +2,6 @@ import os
 
 from pydantic import BaseSettings
 
-CHUNK_SIZE = 9
-
 
 class Settings(BaseSettings):
     pika_url: str
