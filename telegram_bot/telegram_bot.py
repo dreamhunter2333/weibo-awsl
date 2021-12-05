@@ -10,6 +10,8 @@ from telebot import apihelper
 
 from telebot.types import InputMediaPhoto
 
+from telegram_bot.LRU import LRU
+
 from .config import settings
 
 _logger = logging.getLogger(__name__)
@@ -18,11 +20,13 @@ _logger = logging.getLogger(__name__)
 bot = telebot.TeleBot(settings.telebot_token)
 apihelper.proxy = {'https': settings.http_url}
 lock = threading.Lock()
+failed_key = LRU()
 
 
 def send_photos(ch, method, properties, body) -> None:
     lock.acquire()
     try:
+        hash_body = hash(body)
         pics = json.loads(body)
         bot.send_media_group(chat_id=settings.chat_id, timeout=20, media=[
             InputMediaPhoto(media=pic)
@@ -30,6 +34,19 @@ def send_photos(ch, method, properties, body) -> None:
         ])
         _logger.info("send_media_group %s", pics)
         ch.basic_ack(delivery_tag=method.delivery_tag)
+    except Exception as e:
+        count = failed_key.get(hash_body, 0)
+        failed_key.put(hash_body, count+1)
+        if count >= 5:
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+            _logger.info("send body to %s", settings.queue+"_failed")
+            ch.basic_publish(
+                exchange='',
+                routing_key=settings.queue+"_failed",
+                body=body,
+                properties=pika.BasicProperties(delivery_mode=2)
+            )
+        raise e
     finally:
         lock.release()
         time.sleep(10)
@@ -41,6 +58,7 @@ def start_consuming():
     connection = pika.BlockingConnection(pika.URLParameters(settings.pika_url))
     channel = connection.channel()
     channel.queue_declare(queue=settings.queue, durable=True)
+    channel.queue_declare(queue=settings.queue+"_failed", durable=True)
     channel.basic_consume(
         on_message_callback=send_photos,
         queue=settings.queue,
