@@ -31,7 +31,7 @@ def send_photos(ch, method, properties, body) -> None:
                 InputMediaPhoto(media=pic_infos[pic_id]["original"]["url"])
                 for pic_id in pic_ids[i:i+CHUNK_SIZE]
             ])
-            _logger.info("send_media_group %s", pic_ids)
+            _logger.info("send_media_group %s", pic_ids[i:i+CHUNK_SIZE])
             time.sleep(30)
         ch.basic_ack(delivery_tag=method.delivery_tag)
     finally:
