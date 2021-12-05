@@ -32,7 +32,7 @@ def send_photos(ch, method, properties, body) -> None:
                 for pic_id in pic_ids[i:i+CHUNK_SIZE]
             ])
             _logger.info("send_media_group %s", pic_ids[i:i+CHUNK_SIZE])
-            time.sleep(30)
+            time.sleep(10)
         ch.basic_ack(delivery_tag=method.delivery_tag)
     finally:
         lock.release()
