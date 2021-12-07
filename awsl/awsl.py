@@ -51,7 +51,7 @@ class WbAwsl(object):
                     re_mblogid = Tools.update_mblog(self.awsl_producer, wbdata)
                     re_wbdata = Tools.wb_get(WB_SHOW_URL.format(
                         re_mblogid)) if re_mblogid else {}
-                    Tools.send2mq(re_mblogid, re_wbdata)
+                    Tools.send2mq(self.awsl_producer, re_mblogid, re_wbdata)
                     Tools.update_pic(wbdata, re_wbdata)
                 except Exception as e:
                     _logger.exception(e)

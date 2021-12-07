@@ -7,7 +7,7 @@ from typing import List
 from sqlalchemy.sql import func
 
 from .models import AwslProducer, Mblog, Pic, Base, DBSession
-from .config import CHUNK_SIZE, settings, WB_COOKIE
+from .config import CHUNK_SIZE, WB_URL_PREFIX, settings, WB_COOKIE
 
 _logger = logging.getLogger(__name__)
 
@@ -122,19 +122,25 @@ class Tools:
         return awsl_producers
 
     @staticmethod
-    def send2mq(re_mblogid: str, re_wbdata: dict) -> None:
+    def send2mq(awsl_producer: AwslProducer, re_mblogid: str, re_wbdata: dict) -> None:
         try:
             get_channel()
+            wb_url = WB_URL_PREFIX.format(
+                re_wbdata["user"]["id"], re_wbdata["mblogid"])
             pic_infos = re_wbdata.get("pic_infos", {})
             pic_ids = re_wbdata.get("pic_ids", [])
             for i in range(0, len(pic_ids), CHUNK_SIZE):
                 channel.basic_publish(
                     exchange='',
                     routing_key=settings.queue,
-                    body=json.dumps([
-                        pic_infos[pic_id]["original"]["url"]
-                        for pic_id in pic_ids[i:i+CHUNK_SIZE]
-                    ]),
+                    body=json.dumps({
+                        "wb_url": wb_url,
+                        "awsl_producer": awsl_producer.name,
+                        "pics": [
+                            pic_infos[pic_id]["original"]["url"]
+                            for pic_id in pic_ids[i:i+CHUNK_SIZE]
+                        ]
+                    }),
                     properties=pika.BasicProperties(delivery_mode=2)
                 )
                 _logger.info("send mq %s", pic_ids[i:i+CHUNK_SIZE])

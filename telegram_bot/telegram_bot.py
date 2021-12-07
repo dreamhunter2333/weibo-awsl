@@ -27,12 +27,17 @@ def send_photos(ch, method, properties, body) -> None:
     lock.acquire()
     try:
         hash_body = hash(body)
-        pics = json.loads(body)
-        bot.send_media_group(chat_id=settings.chat_id, timeout=20, media=[
-            InputMediaPhoto(media=pic)
-            for pic in pics
-        ])
-        _logger.info("send_media_group %s", pics)
+        data = json.loads(body)
+        pics = data.get("pics")
+        wb_url = data.get("wb_url")
+        awsl_producer = data.get("awsl_producer")
+        caption = "#{} {}".format(awsl_producer, wb_url)
+        if pics:
+            bot.send_media_group(chat_id=settings.chat_id, timeout=20, media=[
+                InputMediaPhoto(media=pic, caption=caption if index == 0 else None)
+                for index, pic in enumerate(pics)
+            ])
+            _logger.info("send_media_group %s", pics)
         ch.basic_ack(delivery_tag=method.delivery_tag)
     except Exception as e:
         count = failed_key.get(hash_body, 0)
