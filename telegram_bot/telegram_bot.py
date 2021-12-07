@@ -57,7 +57,7 @@ def send_photos(ch, method, properties, body) -> None:
         time.sleep(10)
 
 
-@retry(Exception, delay=5, jitter=(1, 3), logger=_logger)
+@retry(Exception, delay=5, jitter=(1, 3), max_delay=50, logger=_logger)
 def start_consuming():
     _logger.info('[*] Waiting for messages. To exit press CTRL+C')
     connection = pika.BlockingConnection(pika.URLParameters(settings.pika_url))
