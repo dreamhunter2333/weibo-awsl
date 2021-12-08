@@ -9,7 +9,7 @@ from .config import settings, WB_DATA_URL, WB_SHOW_URL
 
 
 _logger = logging.getLogger(__name__)
-WB_EMO = re.compile(r'\[.*?\]')
+WB_EMO = re.compile(r'\[awsl\]')
 
 
 class WbAwsl(object):
