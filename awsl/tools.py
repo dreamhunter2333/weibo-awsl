@@ -129,13 +129,14 @@ class Tools:
                 re_wbdata["user"]["id"], re_wbdata["mblogid"])
             pic_infos = re_wbdata.get("pic_infos", {})
             pic_ids = re_wbdata.get("pic_ids", [])
+            source_screen_name = re_wbdata.get("user", {}).get("screen_name") or awsl_producer.name
             for i in range(0, len(pic_ids), CHUNK_SIZE):
                 channel.basic_publish(
                     exchange='',
                     routing_key=settings.queue,
                     body=json.dumps({
                         "wb_url": wb_url,
-                        "awsl_producer": awsl_producer.name,
+                        "awsl_producer": source_screen_name,
                         "pics": [
                             pic_infos[pic_id]["original"]["url"]
                             for pic_id in pic_ids[i:i+CHUNK_SIZE]
