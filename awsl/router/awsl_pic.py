@@ -16,7 +16,7 @@ _logger = logging.getLogger(__name__)
 
 
 @router.get("/list", response_model=List[PicItem], responses={404: {"model": Message}})
-def awsl_list(uid: Optional[str] = settings.uid, limit: Optional[int] = 10, offset: Optional[int] = 0):
+def awsl_list(uid: Optional[str] = "", limit: Optional[int] = 10, offset: Optional[int] = 0):
     if limit > 1000:
         return JSONResponse(
             status_code=404,
@@ -26,7 +26,9 @@ def awsl_list(uid: Optional[str] = settings.uid, limit: Optional[int] = 10, offs
     session = DBSession()
     try:
         pics = session.query(Pic).join(Mblog, Pic.awsl_id == Mblog.id).filter(
-            Mblog.uid == uid).order_by(Pic.awsl_id.desc()).limit(limit).offset(offset).all()
+            Mblog.uid == uid
+        ).order_by(Pic.awsl_id.desc()).limit(limit).offset(offset).all() if uid else session.query(Pic).join(
+            Mblog, Pic.awsl_id == Mblog.id).order_by(Pic.awsl_id.desc()).limit(limit).offset(offset).all()
         res = [{
             "wb_url": WB_URL_PREFIX.format(pic.awsl_mblog.re_user_id, pic.awsl_mblog.re_mblogid),
             "pic_info": json.loads(pic.pic_info)
@@ -37,11 +39,16 @@ def awsl_list(uid: Optional[str] = settings.uid, limit: Optional[int] = 10, offs
 
 
 @router.get("/list_count", response_model=int)
-def awsl_list_count(uid: Optional[str] = settings.uid) -> int:
+def awsl_list_count(uid: Optional[str] = "") -> int:
     session = DBSession()
     try:
         res = session.query(func.count(Pic.id)).join(
-            Mblog, Pic.awsl_id == Mblog.id).filter(Mblog.uid == uid).one()
+                Mblog, Pic.awsl_id == Mblog.id
+            ).filter(
+                Mblog.uid == uid
+            ).one() if uid else session.query(func.count(Pic.id)).join(
+                Mblog, Pic.awsl_id == Mblog.id
+            ).one()
     finally:
         session.close()
     return int(res[0]) if res else 0

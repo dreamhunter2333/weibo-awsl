@@ -13,7 +13,6 @@ CHUNK_SIZE = 9
 
 
 class Settings(BaseSettings):
-    uid: str
     cookie_sub: str
     max_page: int
     db_url: str
