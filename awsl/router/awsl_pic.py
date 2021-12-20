@@ -15,6 +15,19 @@ router = APIRouter()
 _logger = logging.getLogger(__name__)
 
 
+def format_picinfo(pic_info: dict):
+    try:
+        if isinstance(pic_info.get("largest"), dict):
+            pic_info["largest"]["width"] = int(pic_info["largest"]["width"])
+            pic_info["largest"]["height"] = int(pic_info["largest"]["height"])
+        if isinstance(pic_info.get("mw2000"), dict):
+            pic_info["mw2000"]["width"] = int(pic_info["mw2000"]["width"])
+            pic_info["mw2000"]["height"] = int(pic_info["mw2000"]["height"])
+    except Exception as e:
+        _logger.exception(e)
+    return pic_info
+
+
 @router.get("/list", response_model=List[PicItem], responses={404: {"model": Message}})
 def awsl_list(uid: Optional[str] = "", limit: Optional[int] = 10, offset: Optional[int] = 0):
     if limit > 1000:
@@ -31,7 +44,7 @@ def awsl_list(uid: Optional[str] = "", limit: Optional[int] = 10, offset: Option
             Mblog, Pic.awsl_id == Mblog.id).order_by(Pic.awsl_id.desc()).limit(limit).offset(offset).all()
         res = [{
             "wb_url": WB_URL_PREFIX.format(pic.awsl_mblog.re_user_id, pic.awsl_mblog.re_mblogid),
-            "pic_info": json.loads(pic.pic_info)
+            "pic_info": format_picinfo(json.loads(pic.pic_info))
         } for pic in pics if pic.awsl_mblog]
     finally:
         session.close()
