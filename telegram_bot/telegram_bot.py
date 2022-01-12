@@ -35,7 +35,7 @@ def send_photos(ch, method, properties, body) -> None:
         if pics:
             bot.send_media_group(chat_id=settings.chat_id, timeout=20, media=[
                 InputMediaPhoto(media=pic, caption=caption if index == 0 else None)
-                for index, pic in enumerate(pics)
+                for index, pic in enumerate(pics) if ".gif" not in pic
             ])
             _logger.info("send_media_group %s", pics)
         ch.basic_ack(delivery_tag=method.delivery_tag)
